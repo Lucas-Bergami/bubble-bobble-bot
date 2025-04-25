@@ -1,0 +1,21 @@
+# Ignorar ambiente virtual
+venv/
+roms/
+
+# Ignorar arquivos do emulador que parecem temporários ou gerados
+*.bmp
+
+# Ignorar configurações específicas de Python
+.python-version
+
+# Arquivos de sistema ocultos (opcional, dependendo do sistema operacional)
+.DS_Store
+Thumbs.db
+
+# Ignorar cache do Python (caso existam)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+*.m
