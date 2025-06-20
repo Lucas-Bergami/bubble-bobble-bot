@@ -2,6 +2,7 @@ import retro
 import pygame
 import numpy as np
 import time
+import cv2
 
 # Inicializa o pygame
 pygame.init()
@@ -32,8 +33,9 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                running = False
+            if event.key == pygame.K_c:  # Pressione C para capturar
+                cv2.imwrite("captura.png", cv2.cvtColor(obs, cv2.COLOR_RGB2BGR))
+                print("Captura salva como captura.png")
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Botão esquerdo do mouse
                 selecionando = True
