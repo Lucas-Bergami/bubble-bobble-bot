@@ -165,7 +165,7 @@ def codificar_acao(acao_nome):
 # ===============================
 
 env = retro.make(game='BubbleBobble-Nes')
-n_episodios_treinamento = 500
+n_episodios_treinamento = 100
 episodio = 0
 modo_treinamento = True
 obs = env.reset()
@@ -186,6 +186,7 @@ while True:
     personagem = np.array([centro_estimado[0] + roi_x1, centro_estimado[1] + roi_y1]) if centro_estimado else None
     _, _, centros_detectados = detectar_inimigos(roi)
     novos_rastreadores = []
+    cv2.circle(tela, (126, 65), 5, (255, 255, 0), -1)  # amarelo
     for centro in centros_detectados:
         centro_corrigido = (centro[0] + roi_x1, centro[1] + roi_y1)
         rastreador_encontrado = False
@@ -200,7 +201,23 @@ while True:
     rastreadores = novos_rastreadores
     inimigos = [r.prever() for r in rastreadores]
     estado_atual = obter_estado(personagem, inimigos)
-    acao_nome = escolher_acao(estado_atual, modo_treinamento)
+    # Força movimentação em direção ao ponto-alvo se não houver inimigos
+    if not inimigos and personagem is not None:
+        alvo = np.array([130 + roi_x1, 40 + roi_y1])
+        vetor = alvo - personagem
+
+        if abs(vetor[0]) > abs(vetor[1]):
+            if vetor[0] > 0:
+                acao_nome = 'direita'
+            else:
+                acao_nome = 'esquerda'
+        else:
+            if vetor[1] < 0:
+                acao_nome = 'pular'  # Tentando subir
+            else:
+                acao_nome = 'idle'  # Está abaixo do alvo, mas não pode descer
+    else:
+        acao_nome = escolher_acao(estado_atual, modo_treinamento)
     action = codificar_acao(acao_nome)
     obs, reward, done, info = env.step(action)
 
@@ -209,7 +226,7 @@ while True:
     novo_personagem = observar_personagem(nova_roi)
     _, _, novos_inimigos = detectar_inimigos(nova_roi)
     novo_estado = obter_estado(novo_personagem, novos_inimigos)
-    
+
     num_inimigos_antes = len(inimigos)
 
     obs, reward, done, info = env.step(action)
@@ -225,11 +242,11 @@ while True:
 
     if acao_nome == 'atirar':
         if num_inimigos_depois < num_inimigos_antes:
-            recompensa = +20  # Atirou e eliminou inimigo
+            recompensa = +200  # Atirou e eliminou inimigo
         else:
-            recompensa = -5   # Atirou à toa
+            recompensa = -30   # Atirou à toa
     elif num_inimigos_depois == 0:  # Sem inimigos na tela
-        alvo = np.array([120 + roi_x1, 40 + roi_y1])  # Ponto central no topo
+        alvo = np.array([130 + roi_x1, 40 + roi_y1])  # Ponto central no topo
         if personagem is not None:
             dist_antes = np.linalg.norm(np.array(personagem) - alvo)
         else:
@@ -239,14 +256,14 @@ while True:
         else:
             dist_depois = dist_antes
         if dist_depois < dist_antes:
-            recompensa = +1  # Aproximou-se do topo
+            recompensa = +100  # Aproximou-se do topo
         else:
-            recompensa = -1  # Afastou-se do topo
+            recompensa = -50  # Afastou-se do topo
     else:  # Inimigos ainda presentes
         if novo_personagem is not None and novos_inimigos:
             dist = np.linalg.norm(np.array(novo_personagem) - np.array(novos_inimigos[0]))
             if dist < 2:
-                recompensa = -100  # Colado no inimigo, punição máxima
+                recompensa = -300  # Colado no inimigo, punição máxima
             else:
                 recompensa = 0    # Distância segura, sem recompensa
         else:
@@ -282,7 +299,7 @@ while True:
 
     tela_maior = cv2.resize(tela, (largura * 3, altura * 3), interpolation=cv2.INTER_NEAREST)
     cv2.imshow("Tela do jogo", tela_maior)
-    time.sleep(1 / 60)
+    # time.sleep(1 / 60)
 
 cv2.destroyAllWindows()
 env.close()
